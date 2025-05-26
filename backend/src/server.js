@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import authRoutes from './api/routes/authRoutes.js';
 
 import dbClient from './config/db.js';
 
@@ -23,6 +24,9 @@ app.get('/check_connection', (req, res) => {
     return res.status(500).json({ status: 'Error', db: 'disconnected' });
 });
 
+// Import routes
+// Use routes
+app.use('/api/auth', authRoutes);
 
 // 404 error handler
 app.use((req, res) => {

@@ -1,50 +1,67 @@
 import UserModel from "../models/user.js";
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { hashPassword, validatePassword } from "../utils/hash.js";
+import { generateToken } from "../utils/token.js";
+
+const userModel = new UserModel();
+
 
 class AuthService {
-  constructor() {
-    this.model = UserModel;
-  }
-
-  // Create a new user (signup)
-  async createUser(userData) {
-    const existingUser = await this.model.findOne({ email: userData.email }); // Checks if email already exists
-    if (existingUser) {
-      throw new Error('Email already registered');
+    constructor() {
+        this.model = UserModel;
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    userData.password = await bcrypt.hash(userData.password, salt);
+    // Create a new user
+    async createUser(userData) {
+        const existingUser = await this.getUserByEmail(userData.email);
+        if (existingUser) {
+            throw new Error('Email already registered');
+        }
 
-    // Save user
-    const newUser = new this.model(userData);
-    return await newUser.save();
-  }
+        userData.password = await hashPassword(userData.password);
+        userData.displayName = userData.fullName || userData.displayName;
 
-  // Find user by email (for login)
-  async findUserByEmail(email) {
-    return await this.model.findOne({ email });
-  }
+        let newUser;
+        try {
+            newUser = await userModel.create(userData);
+        } catch (error) {
+            throw new Error(error.message);
+        }
 
-  // Validate password during login
-  async validatePassword(plainPassword, hashedPassword) {
-    return await bcrypt.compare(plainPassword, hashedPassword);
-  }
+        if (!newUser) {
+            throw new Error('Failed to create user');
+        }
 
-  // Generate JWT token
-  generateToken(user) {
-    const payload = {
-      id: user._id,
-      email: user.email,
-      fullName: user.fullName || user.displayName,
-    };
+        const token = generateToken(newUser._id, newUser.email);
+        if (!token) {
+            throw new Error('Failed to generate token');
+        }
+        
+        return { user: newUser, token };
+    }
 
-    return jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
-  }
+
+    async getUserByEmail(email) {
+        const user = await userModel.getUserByEmail(email)
+        return user
+    }
+
+    async loginUser(email, password) {
+        const user = await this.getUserByEmail(email);
+        if (!user) {
+          return { user: null, token: null };
+        }
+
+        // Validate password
+        const isMatch = await validatePassword(password, user.password);
+        if (!isMatch) {
+            return { user: null, token: null };
+        }
+
+        const token = generateToken(user) // Generate JWT token 
+        return {user, token };
+    }
 }
 
-export default new UserService();
+export default new AuthService();
+export { userModel };

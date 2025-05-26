@@ -28,7 +28,7 @@ const userSchemaDefinition = {
         lowercase: true,
         trim: true,
     },
-    passwordHash: {
+    password: {
         type: String,
         required: true,
     },
@@ -42,8 +42,10 @@ class UserModel extends BaseModel {
     constructor() {
         super('user', userSchemaDefinition);
     }
+
+    async getUserByEmail(email) {
+        return await this.model.findOne({ email }); // Find user by email
+    }
 }
 
-export default new UserModel();
-
-  
+export default UserModel;

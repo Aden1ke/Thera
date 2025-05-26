@@ -13,7 +13,7 @@ const basePlugin = (schema) => {
         },
     });
 
-    schema.pre('save', (next) => {
+    schema.pre('save', function (next) {
         this.updatedAt = Date.now();
         next();
     });
