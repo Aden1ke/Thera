@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import authRoutes from './api/routes/authRoutes.js';
-import { createVectorStoreFromSeeds } from './api/utils/vectorStore.js';
+import { createEntryVectorStore, createVectorStoreFromSeeds } from './api/utils/vectorStore.js';
 import SeedModel from './api/models/seedModel.js';
 
 import dbClient from './config/db.js';
@@ -55,6 +55,7 @@ async function startServer() {
             const allSeedsDocs = await seedModel.findAll();
             const allSeeds = allSeedsDocs.map(doc => doc.toObject ? doc.toObject() : doc);
             await createVectorStoreFromSeeds(allSeeds);
+            await createEntryVectorStore();
             console.log('All seed embedded')
         } catch (err) {
             console.log(err);

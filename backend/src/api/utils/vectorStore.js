@@ -34,8 +34,40 @@ function getVectorStore() {
     return vectorStore;
 }
 
+let entryVectorStore = null;
+
+// Entries
+async function createEntryVectorStore(entries = []) {
+    const docs = entries.map(entry => ({
+        pageContent: `${entry.entry} emotions: ${entry.emotion?.join(' ')} distress: ${entry.distressScore}`,
+        metadata: entry,
+    }));
+
+    entryVectorStore = await MemoryVectorStore.fromTexts(
+        docs.map(d => d.pageContent),
+        docs.map(d => d.metadata),
+        embeddings
+    );
+}
+
+async function addEntryToVectorStore(entry) {
+    const doc = new Document({
+        pageContent: `${entry.entry} emotions: ${entry.emotion?.join(' ')} distress: ${entry.distressScore}`,
+        metadata: entry,
+    });
+    await entryVectorStore.addDocuments([doc]);
+}
+
+function getEntryVectorStore() {
+    if (!entryVectorStore) throw new Error("Entry vector store not initialized!");
+    return entryVectorStore;
+}
+
 export {
     createVectorStoreFromSeeds,
     addSeedToVectorStore,
     getVectorStore,
+    createEntryVectorStore,
+    addEntryToVectorStore,
+    getEntryVectorStore   
 }

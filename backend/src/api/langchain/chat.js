@@ -1,7 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from '@langchain/core/prompts';
 import { LLMChain } from "langchain/chains";
-import { getVectorStore } from '../utils/vectorStore.js';
+import { getEntryVectorStore, getVectorStore } from '../utils/vectorStore.js';
 import JournalEntryModel from '../models/journal.js';
 
 class ChatService {
@@ -28,14 +28,37 @@ class ChatService {
         this.chain = new LLMChain({ llm: this.chat, prompt: this.chatPrompt });
     }
 
-    async chatWithUser(entry, emotion, distress) {
+    async chatWithUser(entry, emotion, distress, userId) {
         let context = '';
+
+        try {
+            const entryVectorStore = getEntryVectorStore();
+            const entryRetriever = entryVectorStore.asRetriever();
+            const entryDocs = await entryRetriever.getRelevantDocuments(`${entry} ${emotion} distress: ${distress}`);
+
+            const userEntryDocs = entryDocs.filter(doc => 
+                doc.metadata.userId?.toString() === userId.toString()
+            );
+
+            if (userEntryDocs.length) {
+                const entryContext = userEntryDocs.map(doc => doc.pageContent).join('\n---\n');
+                context += "Related previous entries:\n" + entryContext;
+            }
+
+            console.log("Entry docs:", userEntryDocs);
+        } catch (err) {
+            console.warn('No entry context available:', err.message);
+        }
+
 
         if (distress >= 8) {
             const vectorStore = getVectorStore();
             const retriever = vectorStore.asRetriever();
             const docs = await retriever.getRelevantDocuments(`${entry} ${emotion} distress: ${distress}`);
-            context = docs.map(doc => doc.pageContent).join('\n---\n');
+            if (docs.length) {
+                const seedContext = docs.map(doc => doc.pageContent).join('\n---\n');
+                context += (context ? '\n\n' : '') + "Suggested ritual(s):\n" + seedContext;
+            }
         }
 
         const res = await this.chain.call({ entry, emotion, distress, context });
@@ -46,8 +69,8 @@ class ChatService {
         let newEntry;
 
         try {
-          newEntry = this.JournalEntryModel();
-        } catch (err) {
+          newEntry = this.journalEntry.createEntry(entryData);
+        } catch (error) {
           throw new Error(error.message);
         }
 

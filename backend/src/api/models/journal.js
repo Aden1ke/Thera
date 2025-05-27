@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import BaseModel from "./baseModel.js";
+import { addEntryToVectorStore } from "../utils/vectorStore.js";
 
 const journalSchemaDefinition = {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
@@ -19,11 +20,20 @@ class JournalEntryModel extends BaseModel {
             throw new Error('Invalid data provided for creating the document');
         }
 
+        let entry;
+
         try {
-            const entry = await this.create(data);
+            entry = await this.create(data);
         } catch (error) {
             console.error('Error creating document:', error);
             throw new Error('Failed to create document');
+        }
+
+        try {
+            await addEntryToVectorStore(entry);
+        } catch (error) {
+            console.error('Error adding seed to vector store:', error);
+            throw new Error('Failed to add seed to vector store');
         }
 
         return entry;
