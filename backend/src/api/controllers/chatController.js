@@ -27,7 +27,7 @@ class ChatController {
             res.json({ reply });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: 'Something went wrong' });
+            return APIResponse.error(res, 'Something went wrong', 500, error.message);
         }
     }
 }
