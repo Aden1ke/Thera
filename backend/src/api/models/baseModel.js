@@ -24,7 +24,7 @@ class BaseModel {
         this.schema = new Schema(schemaDefinition);
         this.schema.plugin(basePlugin);
 
-        this.model = mongoose.model(modelName, this.schema);
+        this.model = mongoose.models[modelName] || mongoose.model(modelName, this.schema);
     }
 
     async create(data) {
