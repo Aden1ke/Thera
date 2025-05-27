@@ -44,8 +44,25 @@ class UserModel extends BaseModel {
     }
 
     async getUserByEmail(email) {
-        return await this.model.findOne({ email }); // Find user by email
+        return await this.model.findOne({ email });
     }
+    async getUserById(userId) {
+        return await this.model.findById(userId);   
+    }
+    async createUser(userData) {
+        const user = new this.model(userData);
+        return await user.save();
+    }
+    async updateUser(userId, updateData) {
+        return await this.model.findByIdAndUpdate(
+            userId,
+            updateData,
+            { new: true, runValidators: true } 
+        );
+    }
+    async deleteUser(userId) {
+        return await this.model.findByIdAndDelete(userId);
+    }   
 }
 
 export default UserModel;

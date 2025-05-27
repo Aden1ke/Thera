@@ -25,6 +25,11 @@ class APIResponse {
     
         return res.status(statusCode).json(response);
     }  
+    static notFound(res, message = 'Resource not found') {
+        return res.status(404).json({
+            status: 'error',
+            message
+        });
+    }
 }
-  
-export default APIResponse; 
+export default APIResponse;

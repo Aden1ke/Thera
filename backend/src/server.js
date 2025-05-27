@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import authRoutes from './api/routes/authRoutes.js';
+import userRoutes from './api/routes/userRoutes.js';
+import journalRoutes from './api/routes/journalRoutes.js';
 
 import dbClient from './config/db.js';
 
@@ -27,8 +29,10 @@ app.get('/check_connection', (req, res) => {
 // Import routes
 // Use routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes); 
+app.use('/api/journal', journalRoutes);
 
-// 404 error handler
+//404 handler for undefined routes
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });

@@ -1,4 +1,4 @@
-import UserModel from "../models/user.js";
+import UserModel from "../models/userModel.js";
 import jwt from 'jsonwebtoken';
 import { hashPassword, validatePassword } from "../utils/hash.js";
 import { generateToken } from "../utils/token.js";
