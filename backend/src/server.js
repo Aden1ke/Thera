@@ -4,9 +4,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 
+import whisperRoutes from './api/routes/whisperRoutes.js';
 import dbClient from './config/db.js';
 
 dotenv.config();
+console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Loaded' : 'Missing');
 const app = express();
 
 // Middleware configurations
@@ -14,6 +16,10 @@ app.use(helmet());
 app.use(cors()); 
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
+
+
+// Route for transcription
+app.use('/api/whisper', whisperRoutes);
 
 // Basic check endpoint
 app.get('/check_connection', (req, res) => {
@@ -36,6 +42,8 @@ app.use((err, req, res, next) => {
         error: err.message || 'Internal Server Error',
     });
 });
+
+
 
 // Start server only after DB connection is ready
 const PORT = process.env.PORT || 5000;
