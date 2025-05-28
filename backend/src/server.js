@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 import authRoutes from './api/routes/authRoutes.js';
 import userRoutes from './api/routes/userRoutes.js';
 import journalRoutes from './api/routes/journalRoutes.js';
-
+import woundRoutes from './api/routes/woundRoutes.js';
+// Import database client
 import dbClient from './config/db.js';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.get('/check_connection', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes); 
 app.use('/api/journal', journalRoutes);
+app.use('/api/wound-seeds', woundRoutes);
 
 //404 handler for undefined routes
 app.use((req, res) => {
