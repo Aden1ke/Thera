@@ -1,12 +1,13 @@
-import logo from './logo.svg';
 import './App.css';
-import VoiceRecorder from './components/VoiceRecorder/VoiceRecorder';
+//import ChatApp from './components/chatApp/ChatApp';
+import HomePage from './components/Home/HomePage';
 
 
 function App() {
   return (
     <div className="App">
-            <VoiceRecorder />
+    <HomePage/>
+    {/*  <ChatApp/>*/}
     </div>
   );
 }
