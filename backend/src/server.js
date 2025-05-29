@@ -4,6 +4,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import authRoutes from './api/routes/authRoutes.js';
+import { createEntryVectorStore, createVectorStoreFromSeeds } from './api/utils/vectorStore.js';
+import SeedModel from './api/models/seedModel.js';
+
+
+import dbClient from './config/db.js';
+import chatRouter from './api/routes/chatRoutes.js';
+import journalRouter from './api/routes/journalRoutes.js';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 
@@ -105,11 +113,19 @@ app.get('/check_connection', (req, res) => {
     return res.status(500).json({ status: 'Error', db: 'disconnected' });
 });
 
+// Import routes
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRouter);
+app.use('/api/journals', journalRouter);
 
+
+// 404 error handler
+/* app.use((req, res) => {
 // 404 error handler (unchanged)
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
-});
+}); */
 
 // error handler middleware (unchanged)
 app.use((err, req, res, next) => {
@@ -125,6 +141,19 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
     try {
         await dbClient.connect();
+        try {
+            const seedModel = new SeedModel();
+            const allSeedsDocs = await seedModel.findAll();
+            const allSeeds = allSeedsDocs.map(doc => doc.toObject ? doc.toObject() : doc);
+            await createVectorStoreFromSeeds(allSeeds);
+            await createEntryVectorStore();
+            console.log('All seed embedded')
+        } catch (err) {
+            console.log(err);
+        }
+        
+        app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
         server.listen(PORT, () => {
             console.log(`HTTP and WebSocket server running on port ${PORT}`);
             console.log(`WebSocket endpoint: ws://localhost:${PORT}`);
