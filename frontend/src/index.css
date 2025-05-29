@@ -1,0 +1,26 @@
+{/*body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}*/}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  button:hover rect {
+    stroke-dasharray: 200 60 !important;
+    stroke-dashoffset: 0 !important;
+    transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke-dasharray 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
