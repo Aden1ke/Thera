@@ -33,6 +33,19 @@ class JournalController {
       return APIResponse.error(res, 'Failed to fetch journal entry.');
     }
   }
+
+  static async getEmotionLog(req, res) {
+    const userId = req.user.id;
+    const { from, to, emotion } = req.query;
+
+    try {
+      const logs = await JournalService.getEmotionLogs({ userId, from, to, emotion });
+      return APIResponse.success(res, logs, 'Fetched emotion log successfully.');
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      return APIResponse.error(res, 'Failed to fetch emotion log.', 500, error.message);
+    }
+  }
 }
 
 export default JournalController;

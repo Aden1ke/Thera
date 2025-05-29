@@ -24,7 +24,8 @@ class JournalService {
         console.error('Gradio analysis failed:', error.message);
         throw new Error('Emotion analysis failed');
     }
-}
+  }
+
 
   async createJournal({ userId, text }) {
     if (!userId || !text) {
@@ -58,7 +59,7 @@ class JournalService {
             journalRef: journal._id
         });
     } catch (error) {
-        console.error('Error creating journal entry:', error.message);
+        console.error('Error creating journal entry:', error);
         throw new Error('Failed to create journal entry');
     }
 
@@ -85,10 +86,14 @@ class JournalService {
     if (from || to) query.createdAt = {};
     if (from) query.createdAt.$gte = new Date(from);
     if (to) query.createdAt.$lte = new Date(to);
-    if (emotion) query.detectedEmotion = { $regex: emotion, $options: 'i' };
 
+    if (emotion) {
+        query.detectedEmotion = { $regex: emotion, $options: 'i' };
+    }
+
+    // Use distressLogModel for distress logs, not journalEntryModel
     return await this.distressLogModel.model.find(query).sort({ createdAt: -1 });
-  }
+}
 }
 
 export default new JournalService();
