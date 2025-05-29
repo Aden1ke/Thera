@@ -1,4 +1,6 @@
 import chatService from '../langchain/chat.js'
+import journalService from '../services/journalService.js';
+import APIResponse from '../utils/APIResponse.js';
 import { getEntryVectorStore } from '../utils/vectorStore.js';
 
 class ChatController {
@@ -6,17 +8,28 @@ class ChatController {
         const userId = req.user.id;
         console.log('User ID:', userId);
         try {
-            const { entry, emotion, distressScore } = req.body;
+            const { text } = req.body;
+            let journalEntry;
+
             try {
-                const journalEntry = await chatService.createEntry({ userId, entry, emotion, distressScore });
+                journalEntry = await journalService.createJournal({ userId, text });
             } catch (error) {
                 console.log(error);
                 return APIResponse.error(res, 'Error registering user', 400, error.message);
             }
-            
+
+            const { entry, emotions, distressScore } = journalEntry;
+
+            const context = {
+                userId,
+                entry,
+                emotions,
+                distressScore
+            };
+
             let reply;
             try {
-                reply = await chatService.chatWithUser(entry, emotion, distressScore, userId);
+                reply = await chatService.chatWithUser(entry, emotions, distressScore, userId);
             } catch (error) {
                 console.log(error);
                 return APIResponse.error(res, 'Error registering user', 400, error.message);

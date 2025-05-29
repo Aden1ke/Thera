@@ -7,8 +7,10 @@ import authRoutes from './api/routes/authRoutes.js';
 import { createEntryVectorStore, createVectorStoreFromSeeds } from './api/utils/vectorStore.js';
 import SeedModel from './api/models/seedModel.js';
 
+
 import dbClient from './config/db.js';
 import chatRouter from './api/routes/chatRoutes.js';
+import journalRouter from './api/routes/journalRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -30,11 +32,13 @@ app.get('/check_connection', (req, res) => {
 // Import routes
 // Use routes
 app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRouter)
+app.use('/api/chat', chatRouter);
+app.use('/api/journals', journalRouter);
+
 // 404 error handler
-app.use((req, res) => {
+/* app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
-});
+}); */
 
 // error handler middleware
 app.use((err, req, res, next) => {
