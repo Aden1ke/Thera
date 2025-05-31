@@ -1,25 +1,30 @@
+// src/components/Home/HomePage.js
 "use client"
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from '../../components/ui/button';
-import { Progress } from "../../components/ui/progress"
-import { MessageCircle, Moon, Sun, Heart, AlertTriangle } from "lucide-react"
+import { MessageCircle, Moon, Sun, Heart } from "lucide-react"
+import { Link } from "react-router-dom"; // Import Link for navigation
 import ChatApp from '../chatApp/ChatApp';
-import SoulGarden from "../soul-garden"
-import HealingRituals from "../healing-rituals"
-import { useTheme } from "next-themes"
+import SoulGarden from "../soul-garden";
+import HealingRituals from "../healing-rituals";
+import ProfilePage from "../profile-page"; // Import ProfilePage component
+import JournalHistory from "../journal-history"; // Import JournalHistory component
+import { useTheme } from '../../components/theme-provider';
+
 
 export default function HomePage() {
   // State Management
-  const [showChat, setShowChat] = useState(false)          // Toggles chat interface
-  const [currentView, setCurrentView] = useState("home")   // Controls current view (home/garden/rituals)
-  const [emotionalState, setEmotionalState] = useState({   // Tracks user's emotional metrics
+  const [showChat, setShowChat] = useState(false) // Toggles chat interface
+  const [currentView, setCurrentView] = useState("home") // Controls current view (home/garden/rituals/profile/journal)
+  // Removed emotionalState as it's no longer used for progress bars, but kept if other components need it
+  const [emotionalState, setEmotionalState] = useState({ // Tracks user's emotional metrics
     wellness: 65,
     distress: 20,
   })
-  const [isFirstVisit, setIsFirstVisit] = useState(true)   // First-time user experience flag
-  const { theme, setTheme } = useTheme()                   // Theme management (dark/light mode)
+  const [isFirstVisit, setIsFirstVisit] = useState(true) // First-time user experience flag
+  const { theme, setTheme } = useTheme(); // Theme management (dark/light mode)
 
   // First Visit Effect
   useEffect(() => {
@@ -34,9 +39,12 @@ export default function HomePage() {
     setShowChat(true)
   }
 
-  const handleEmotionalUpdate = (wellness: number, distress: number) => {
+  // Kept handleEmotionalUpdate if ChatApp still calls it, even if not displayed on HomePage
+  const handleEmotionalUpdate = (wellness, distress) => {
     setEmotionalState({ wellness, distress })
   }
+
+  // --- Conditional Rendering based on currentView state (instead of React Router routes for sub-views) ---
 
   // Chat Interface View
   if (showChat) {
@@ -93,6 +101,50 @@ export default function HomePage() {
     )
   }
 
+  // Profile Page View
+  if (currentView === "profile") {
+    return (
+      <div className="min-h-screen relative">
+        <div className="fixed inset-0 z-0">
+          <div
+            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage:
+                theme === "dark" ? "url('/dark-forest-plant.jpg')" : "url('/bright-waterfall.jpg')", // Ensure correct image paths
+            }}
+          />
+          <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
+        </div>
+        <div className="relative z-10">
+          <ProfilePage onBack={() => setCurrentView("home")} emotionalState={emotionalState} />
+        </div>
+      </div>
+    );
+  }
+
+  // Journal History View
+  if (currentView === "journal") {
+    return (
+      <div className="min-h-screen relative">
+        <div className="fixed inset-0 z-0">
+          <div
+            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage:
+                theme === "dark"
+                  ? "url('/bioluminescent-waterfall.jpg')" // Ensure correct image paths
+                  : "url('/bright-waterfall.jpg')",
+            }}
+          />
+          <div className="absolute inset-0 bg-black/30 dark:bg-black/50" />
+        </div>
+        <div className="relative z-10">
+          <JournalHistory onBack={() => setCurrentView("home")} />
+        </div>
+      </div>
+    );
+  }
+
   // MAIN HOME VIEW -------------------------------------------------
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -121,15 +173,33 @@ export default function HomePage() {
         {theme === "dark" ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-purple-600" />}
       </motion.button>
 
-      {/* View Navigation */}
-      {/* Animated buttons for switching between app sections */}
+      {/* Login and Signup Buttons */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         className="fixed top-6 left-6 z-50 flex gap-2"
       >
-        {["home", "garden", "rituals"].map((view) => (
+        <Link to="/login">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm border border-white/30"
+          >
+            Login
+          </Button>
+        </Link>
+        <Link to="/signup">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm border border-white/30"
+          >
+            Sign Up
+          </Button>
+        </Link>
+        {/* View Navigation buttons, now including Profile and Journal */}
+        {["home", "garden", "rituals", "profile", "journal"].map((view) => (
           <Button
             key={view}
             variant={currentView === view ? "default" : "ghost"}
@@ -144,60 +214,11 @@ export default function HomePage() {
             {view === "home" && <Heart className="w-4 h-4 mr-2" />}
             {view === "garden" && "🌱"}
             {view === "rituals" && "🌙"}
+            {view === "profile" && "👤"} {/* Icon for Profile */}
+            {view === "journal" && "📖"} {/* Icon for Journal */}
             {view.charAt(0).toUpperCase() + view.slice(1)}
           </Button>
         ))}
-      </motion.div>
-
-      {/* Emotional Progress Bars */}
-      {/* Animated sidebar showing wellness and distress metrics */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.5 }}
-        className="fixed left-6 top-1/2 transform -translate-y-1/2 z-40 space-y-6"
-      >
-        {/* Wellness Progress */}
-        <div className="bg-white/20 dark:bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-white/30 dark:border-gray-600 min-w-[200px]">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-healing-teal/20 flex items-center justify-center">
-              <Heart className="w-4 h-4 text-healing-teal" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Soul Wellness</p>
-              <p className="text-xs text-white/70">{emotionalState.wellness}%</p>
-            </div>
-          </div>
-          <Progress value={emotionalState.wellness} className="h-2 bg-white/20" />
-          <div className="mt-2 text-xs text-white/60">
-            {emotionalState.wellness > 70
-              ? "Flourishing 🌸"
-              : emotionalState.wellness > 40
-                ? "Growing 🌱"
-                : "Needs care 💜"}
-          </div>
-        </div>
-
-        {/* Distress Progress */}
-        <div className="bg-white/20 dark:bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-white/30 dark:border-gray-600 min-w-[200px]">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-crisis-red/20 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-crisis-red" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Distress Level</p>
-              <p className="text-xs text-white/70">{emotionalState.distress}%</p>
-            </div>
-          </div>
-          <Progress value={emotionalState.distress} className="h-2 bg-white/20" />
-          <div className="mt-2 text-xs text-white/60">
-            {emotionalState.distress < 30
-              ? "Peaceful 🕊️"
-              : emotionalState.distress < 60
-                ? "Manageable 🌧️"
-                : "Storm passing ⛈️"}
-          </div>
-        </div>
       </motion.div>
 
       {/* Central Content Area */}
@@ -314,15 +335,6 @@ export default function HomePage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <motion.div
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            className="text-6xl origin-bottom"
-          >
-            🌱
-          </motion.div>
-
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
