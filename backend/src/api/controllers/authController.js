@@ -61,9 +61,6 @@ class AuthController {
             if (!user) {
                 console.log('Backend: Login - Invalid email or password provided');
                 return APIResponse.error(res, 'Invalid email or password', 401);
-                // The 'return;' after this line is redundant as the APIResponse.error already sends the response and returns.
-                // You can safely remove it.
-                // return;
             }
 
             const sanitizedUserData = sanitizeUserResponse(user);
@@ -76,6 +73,51 @@ class AuthController {
         } catch (error) {
             console.error('Backend: Catch-all error in AuthController.login:', error); // Log unexpected errors
             return APIResponse.error(res, 'Internal server error during login', 500, error.message);
+        }
+    }
+
+    static async getUser(req, res) {
+        const userId = req.user.id;
+
+        if (!userId) {
+            console.log('Backend: getUser - User ID not found in request');
+            return APIResponse.error(res, 'User ID is required', 400);
+        }
+
+        try {
+            const user = await authService.getUserById(userId);
+            if (!user) {
+                console.log('Backend: getUser - User not found for ID:', userId);
+                return APIResponse.notFound(res, 'User not found');
+            }
+
+            const sanitizedUserData = sanitizeUserResponse(user);
+            console.log(sanitizedUserData);
+
+            return APIResponse.success(res, { user: sanitizedUserData }, 'User data retrieved successfully');
+        } catch (error) {
+            console.error('Backend: Catch-all error in AuthController.getUser:', error); // Log unexpected errors
+            return APIResponse.error(res, 'Internal server error while fetching user data', 500, error.message);
+        }
+    }
+
+    static async updateUser(req, res) {
+        const userId = req.user.id;
+        if (!userId) {
+            return APIResponse.error(res, 'User ID is required', 400);
+        }
+
+        try {
+            const updatedUser = await authService.updateUserById(userId, req.body);
+            if (!updatedUser) {
+                return APIResponse.notFound(res, 'User not found');
+            }
+
+            const sanitizedUserData = sanitizeUserResponse(updatedUser);
+            return APIResponse.success(res, { user: sanitizedUserData }, 'User profile updated successfully');
+        } catch (error) {
+            console.error('Backend: Error updating user profile:', error);
+            return APIResponse.error(res, 'Failed to update user profile', 500, error.message);
         }
     }
 }

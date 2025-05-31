@@ -73,7 +73,7 @@ export default function ProfilePage({ onBack, emotionalState }) {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -87,33 +87,34 @@ export default function ProfilePage({ onBack, emotionalState }) {
       }
 
       const data = await response.json();
+      const user = data.data.user;
       setProfile(prevProfile => ({
         ...prevProfile, // Keep default values for fields not returned by backend if necessary
-        name: data.user.name || `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim(),
-        email: data.user.email,
-        phone: data.user.phone || "",
-        bio: data.user.bio || "",
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: user.email,
+        phone: user.phone || "",
+        bio: user.bio || "",
         emergencyContact: {
-          name: data.user.emergencyContact?.name || "",
-          email: data.user.emergencyContact?.email || "",
-          phone: data.user.emergencyContact?.phone || "",
-          relationship: data.user.emergencyContact?.relationship || "",
+          name: user.emergencyContact?.name || "",
+          email: user.emergencyContact?.email || "",
+          phone: user.emergencyContact?.phone || "",
+          relationship: user.emergencyContact?.relationship || "",
         },
-        joinDate: data.user.joinDate || (data.user.createdAt ? data.user.createdAt.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]),
+        joinDate: user.joinDate || (user.createdAt ? user.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]),
       }));
       // Also update the local storage with the full profile
       localStorage.setItem("thera_user_profile", JSON.stringify({
-        name: data.user.name || `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim(),
-        email: data.user.email,
-        phone: data.user.phone || "",
-        bio: data.user.bio || "",
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: user.email,
+        phone: user.phone || "",
+        bio: user.bio || "",
         emergencyContact: {
-          name: data.user.emergencyContact?.name || "",
-          email: data.user.emergencyContact?.email || "",
-          phone: data.user.emergencyContact?.phone || "",
-          relationship: data.user.emergencyContact?.relationship || "",
+          name: user.emergencyContact?.name || "",
+          email: user.emergencyContact?.email || "",
+          phone: user.emergencyContact?.phone || "",
+          relationship: user.emergencyContact?.relationship || "",
         },
-        joinDate: data.user.joinDate || (data.user.createdAt ? data.user.createdAt.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]),
+        joinDate: user.joinDate || (user.createdAt ? user.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]),
       }));
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -156,7 +157,7 @@ export default function ProfilePage({ onBack, emotionalState }) {
         throw new Error("User ID not found for saving profile.");
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: "PUT", // Or PATCH for partial updates
         headers: {
           "Content-Type": "application/json",
@@ -228,6 +229,13 @@ export default function ProfilePage({ onBack, emotionalState }) {
       </div>
     );
   }
+
+  const emergencyContact = profile.emergencyContact || {
+    name: "",
+    email: "",
+    phone: "",
+    relationship: ""
+  };
 
   return (
     <div className="min-h-screen p-4">
@@ -379,7 +387,7 @@ export default function ProfilePage({ onBack, emotionalState }) {
                   Contact Name
                 </label>
                 <Input
-                  value={profile.emergencyContact.name}
+                  value={emergencyContact.name}
                   onChange={(e) => updateProfile("emergencyContact.name", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
@@ -391,7 +399,7 @@ export default function ProfilePage({ onBack, emotionalState }) {
                   Relationship
                 </label>
                 <Input
-                  value={profile.emergencyContact.relationship}
+                  value={emergencyContact.relationship}
                   onChange={(e) => updateProfile("emergencyContact.relationship", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
@@ -402,7 +410,7 @@ export default function ProfilePage({ onBack, emotionalState }) {
                 <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">Email</label>
                 <Input
                   type="email"
-                  value={profile.emergencyContact.email}
+                  value={emergencyContact.email}
                   onChange={(e) => updateProfile("emergencyContact.email", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
@@ -412,7 +420,7 @@ export default function ProfilePage({ onBack, emotionalState }) {
               <div>
                 <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">Phone</label>
                 <Input
-                  value={profile.emergencyContact.phone}
+                  value={emergencyContact.phone}
                   onChange={(e) => updateProfile("emergencyContact.phone", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
