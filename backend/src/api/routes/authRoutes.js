@@ -8,5 +8,6 @@ authRouter.post('/register', AuthContoller.register);
 authRouter.post('/login', AuthContoller.login);
 authRouter.get('/profile', authMiddleware.verifyToken, AuthContoller.getUser);
 authRouter.put('/profile', authMiddleware.verifyToken, AuthContoller.updateUser);
+//authRouter.post('/logout', authMiddleware.verifyToken, AuthContoller.logout);
 
 export default authRouter;

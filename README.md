@@ -127,6 +127,30 @@ TensorFlow, Whisper (voice-to-text), MongoDB, HuggingFace (RoBERTa), LangChain (
 
 ---
 
+## 📸 Screenshots
+
+Here are some glimpses of Thera in action:
+
+**Homepage / Main Navigation:**
+![Homepage](https://raw.githubusercontent.com/Aden1ke/Thera/main/docs/homepage.jpg)
+
+**Chat with Thera (Soul Companion):**
+![Chat Interface](https://raw.githubusercontent.com/Aden1ke/Thera/main/docs/chat_sample.jpg)
+
+**Journal History:**
+![Journal History](https://raw.githubusercontent.com/Aden1ke/Thera/main/docs/journal.jpg)
+
+**User Profile:**
+![User Profile](https://raw.githubusercontent.com/Aden1ke/Thera/main/docs/profile.jpg)
+
+**Login Page:**
+![Login Page](https://raw.githubusercontent.com/Aden1ke/Thera/main/docs/login.jpg)
+
+**Sign Up Page:**
+![Sign Up Page](https://raw.githubusercontent.com/Aden1ke/Thera/main/docs/signup.jpg)
+
+---
+
 ## 🧪 MVP Scope 
 
 | Feature                    | Stack                                |
@@ -173,6 +197,20 @@ TensorFlow, Whisper (voice-to-text), MongoDB, HuggingFace (RoBERTa), LangChain (
 ## 🧰 Installation
 
 ### Clone the repository:
+
+#### .env for frontend
+NEXT_PUBLIC_WS_ENDPOINT="ws://localhost:5000" # For local development
+REACT_APP_BACKEND_URL="http://localhost:5000" # For local development
+
+
+#### .env for backend
+DEV_DB_URI="mongodb+srv://user_dev:password_dev@dev-cluster.abcdef.mongodb.net/?retryWrites=true&w=majority&appName=dev-cluster"
+NODE_ENV=development
+OPENAI_API_KEY="sk-fakeopenaiapikey0123456789abcdefghijklmnopqrstuvwxyz"
+YOUTUBE_API_KEY="AIzaSyB_fakeyoutubeapikey1234567890"
+JWT_SECRET="FakeSuperSecretKeyForJWTsUsedInProdOnlyPleaseDontShare"
+FRONTEND_URL="http://localhost:3000" # For local development
+
 
 ```bash
 git clone https://github.com/your-username/thera.git

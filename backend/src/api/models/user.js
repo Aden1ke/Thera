@@ -36,6 +36,7 @@ const userSchemaDefinition = {
         type: String,
         default: '',
     },
+    
 };
 
 class UserModel extends BaseModel {

@@ -1,4 +1,3 @@
-// src/components/login.js
 // Removed: "use client";
 
 import { useState } from "react";
@@ -21,7 +20,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { theme } = useTheme(); // Now correctly using your custom useTheme
+  const { theme } = useTheme();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,31 +28,47 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // In a pure React app, your API endpoint might be different.
-      // If your backend is not on the same origin, you might need to use a full URL:
-      // const response = await fetch("http://localhost:5000/api/auth/login", { // Example
-      const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'; // Fallback for safety
+      const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        }, 
+        },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // --- Core Authentication Data ---
         localStorage.setItem(
           "thera_auth",
           JSON.stringify({
             isAuthenticated: true,
-            user: data.data.user,
+            user: data.data.user, // Store user object directly if backend sends it
             token: data.data.token,
             timestamp: Date.now(),
           }),
         );
+
+        const userProfile = {
+          name: `${data.data.user.firstName || ''} ${data.data.user.lastName || ''}`.trim(),
+          email: data.data.user.email,
+          phone: data.data.user.phone || "",
+          bio: data.data.user.bio || "",
+          emergencyContact: {
+            name: data.data.user.emergencyContact?.name || "",
+            email: data.data.user.emergencyContact?.email || "",
+            phone: data.data.user.emergencyContact?.phone || "",
+            relationship: data.data.user.emergencyContact?.relationship || "",
+          },
+          // Use createdAt from user data if available, otherwise default to current date
+          joinDate: data.data.user.createdAt ? new Date(data.data.user.createdAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        };
+        localStorage.setItem("thera_user_profile", JSON.stringify(userProfile));
+
+        // Redirect to the home page (which will then pick up authentication)
         navigate("/");
       } else {
         setError(data.message || "Invalid email or password");
@@ -73,7 +88,6 @@ export default function LoginPage() {
         <div
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            // Now theme is correctly used from your custom theme-provider
             backgroundImage:
               theme === "dark" ? "url('/dark-forest-plant.jpg')" : "url('/bright-waterfall.jpg')",
           }}

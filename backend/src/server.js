@@ -134,7 +134,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRouter);
 app.use('/api/journals', journalRouter);
 //app.use('/api/roberta', robertaRouter);
-app.use('/api/youtube', youTubeRouter);
+app.use('/api/Youtube', youTubeRouter);
 app.use('/api/users', userRoutes); // Add this line, choose your path
 // ...
 // 404 error handler

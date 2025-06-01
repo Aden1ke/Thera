@@ -119,7 +119,8 @@ class AuthController {
             console.error('Backend: Error updating user profile:', error);
             return APIResponse.error(res, 'Failed to update user profile', 500, error.message);
         }
-    }
+    } 
+
 }
 
 export default AuthController;

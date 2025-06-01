@@ -4,27 +4,63 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from '../../components/ui/button';
-import { MessageCircle, Moon, Sun, Heart } from "lucide-react"
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { MessageCircle, Moon, Sun, Heart, User, LogOut, BookOpen } from "lucide-react" // Added User, LogOut, BookOpen icons
+import { Link, useNavigate } from "react-router-dom"; // Import Link and useNavigate
 import ChatApp from '../chatApp/ChatApp';
 import SoulGarden from "../soul-garden";
 import HealingRituals from "../healing-rituals";
-import ProfilePage from "../profile-page"; // Import ProfilePage component
-import JournalHistory from "../journal-history"; // Import JournalHistory component
+import ProfilePage from "../profile-page";
+import JournalHistory from "../journal-history";
 import { useTheme } from '../../components/theme-provider';
 
-
 export default function HomePage() {
-  // State Management
-  const [showChat, setShowChat] = useState(false) // Toggles chat interface
-  const [currentView, setCurrentView] = useState("home") // Controls current view (home/garden/rituals/profile/journal)
-  // Removed emotionalState as it's no longer used for progress bars, but kept if other components need it
-  const [emotionalState, setEmotionalState] = useState({ // Tracks user's emotional metrics
+  const [showChat, setShowChat] = useState(false)
+  const [currentView, setCurrentView] = useState("home")
+  const [emotionalState, setEmotionalState] = useState({
     wellness: 65,
     distress: 20,
   })
-  const [isFirstVisit, setIsFirstVisit] = useState(true) // First-time user experience flag
-  const { theme, setTheme } = useTheme(); // Theme management (dark/light mode)
+  const [isFirstVisit, setIsFirstVisit] = useState(true)
+  const { theme, setTheme } = useTheme();
+
+  // --- NEW: Authentication State Management  to handle logou---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate for redirection
+
+  useEffect(() => {
+    // Check authentication status from localStorage on component mount
+    const authData = localStorage.getItem("thera_auth");
+    if (authData) {
+      try {
+        const parsedAuth = JSON.parse(authData);
+        if (parsedAuth.isAuthenticated && parsedAuth.token) {
+          setIsAuthenticated(true);
+        } else {
+          // If authData is corrupt or marked as not authenticated, clear it
+          localStorage.removeItem("thera_auth");
+          localStorage.removeItem("thera_user_profile");
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Error parsing auth data from localStorage:", error);
+        localStorage.removeItem("thera_auth"); // Clear bad data
+        localStorage.removeItem("thera_user_profile");
+        setIsAuthenticated(false);
+      }
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, []); // Run once on mount
+
+  // NEW: Logout Function
+  const handleLogout = () => {
+    console.log("HomePage: Frontend logout initiated.");
+    // ProfilePage already cleared localStorage, we just update state and redirect
+    setIsAuthenticated(false);
+    setCurrentView("home"); // Optionally revert to home view after logout
+    navigate('/login'); // Redirect to the login page
+  };
+  // --- END NEW ---
 
   // First Visit Effect
   useEffect(() => {
@@ -36,120 +72,115 @@ export default function HomePage() {
 
   // Chat Handlers
   const handleShareDay = () => {
-    setShowChat(true)
+    // Only allow chat if authenticated, otherwise redirect to login
+    if (isAuthenticated) {
+      setShowChat(true);
+    } else {
+      navigate('/login');
+    }
   }
 
-  // Kept handleEmotionalUpdate if ChatApp still calls it, even if not displayed on HomePage
   const handleEmotionalUpdate = (wellness, distress) => {
     setEmotionalState({ wellness, distress })
   }
 
-  // --- Conditional Rendering based on currentView state (instead of React Router routes for sub-views) ---
+  // Conditional Rendering based on currentView state
+  // Only render these protected views if authenticated
+  if (isAuthenticated) {
+    if (showChat) {
+      return <ChatApp onEmotionalUpdate={handleEmotionalUpdate} onBack={() => setShowChat(false)} />
+    }
 
-  // Chat Interface View
-  if (showChat) {
-    return <ChatApp onEmotionalUpdate={handleEmotionalUpdate} onBack={() => setShowChat(false)} />
+    if (currentView === "garden") {
+      return (
+        <div className="min-h-screen relative">
+          <div className="fixed inset-0 z-0">
+            <div
+              className="w-full h-full bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage:
+                  theme === "dark" ? "url('/dense-forest.jpg')" : "url('/bright-waterfall.jpg')",
+              }}
+            />
+            <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
+          </div>
+          <div className="relative z-10">
+            <SoulGarden woundSeeds={[]} onBack={() => setCurrentView("home")} emotionalState={emotionalState} />
+          </div>
+        </div>
+      )
+    }
+
+    if (currentView === "rituals") {
+      return (
+        <div className="min-h-screen relative">
+          <div className="fixed inset-0 z-0">
+            <div
+              className="w-full h-full bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage:
+                  theme === "dark"
+                    ? "url('/bioluminescent-waterfall.jpg')"
+                    : "url('/bright-waterfall.g')"
+              }}
+            />
+            <div className="absolute inset-0 bg-black/30 dark:bg-black/50" />
+          </div>
+          <div className="relative z-10">
+            <HealingRituals onBack={() => setCurrentView("home")} />
+          </div>
+        </div>
+      )
+    }
+
+    if (currentView === "profile") {
+      return (
+        <div className="min-h-screen relative">
+          <div className="fixed inset-0 z-0">
+            <div
+              className="w-full h-full bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage:
+                  theme === "dark" ? "url('/dark-forest-plant.jpg')" : "url('/bright-waterfall.jpg')",
+              }}
+            />
+            <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
+          </div>
+          <div className="relative z-10">
+            {/* Pass the handleLogout function to ProfilePage */}
+            <ProfilePage onBack={() => setCurrentView("home")} emotionalState={emotionalState} onLogout={handleLogout} />
+          </div>
+        </div>
+      );
+    }
+
+    if (currentView === "journal") {
+      return (
+        <div className="min-h-screen relative">
+          <div className="fixed inset-0 z-0">
+            <div
+              className="w-full h-full bg-full bg-center bg-no-repeat"
+              style={{
+                backgroundImage:
+                  theme === "dark"
+                    ? "url('/bioluminescent-waterfall.jpg')"
+                    : "url('/bright-waterfall.jpg')",
+              }}
+            />
+            <div className="absolute inset-0 bg-black/30 dark:bg-black/50" />
+          </div>
+          <div className="relative z-10">
+            <JournalHistory onBack={() => setCurrentView("home")} />
+          </div>
+        </div>
+      );
+    }
   }
 
-  // Soul Garden View (Plant-based emotional visualization)
-  if (currentView === "garden") {
-    return (
-      <div className="min-h-screen relative">
-        {/* Themed background with overlay */}
-        <div className="fixed inset-0 z-0">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage:
-                theme === "dark" ? "url('/dense-forest.jpg')" : "url('/bright-waterfall.jpg')",
-            }}
-          />
-          <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
-        </div>
 
-        {/* Garden Component */}
-        <div className="relative z-10">
-          <SoulGarden woundSeeds={[]} onBack={() => setCurrentView("home")} emotionalState={emotionalState} />
-        </div>
-      </div>
-    )
-  }
-
-  // Healing Rituals View (Therapeutic activities)
-  if (currentView === "rituals") {
-    return (
-      <div className="min-h-screen relative">
-        {/* Themed background with overlay */}
-        <div className="fixed inset-0 z-0">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage:
-                theme === "dark"
-                  ? "url('/bioluminescent-waterfall.jpg')"
-                  : "url('/bright-waterfall.jpg')",
-            }}
-          />
-          <div className="absolute inset-0 bg-black/30 dark:bg-black/50" />
-        </div>
-
-        {/* Rituals Component */}
-        <div className="relative z-10">
-          <HealingRituals onBack={() => setCurrentView("home")} />
-        </div>
-      </div>
-    )
-  }
-
-  // Profile Page View
-  if (currentView === "profile") {
-    return (
-      <div className="min-h-screen relative">
-        <div className="fixed inset-0 z-0">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage:
-                theme === "dark" ? "url('/dark-forest-plant.jpg')" : "url('/bright-waterfall.jpg')", // Ensure correct image paths
-            }}
-          />
-          <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
-        </div>
-        <div className="relative z-10">
-          <ProfilePage onBack={() => setCurrentView("home")} emotionalState={emotionalState} />
-        </div>
-      </div>
-    );
-  }
-
-  // Journal History View
-  if (currentView === "journal") {
-    return (
-      <div className="min-h-screen relative">
-        <div className="fixed inset-0 z-0">
-          <div
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage:
-                theme === "dark"
-                  ? "url('/bioluminescent-waterfall.jpg')" // Ensure correct image paths
-                  : "url('/bright-waterfall.jpg')",
-            }}
-          />
-          <div className="absolute inset-0 bg-black/30 dark:bg-black/50" />
-        </div>
-        <div className="relative z-10">
-          <JournalHistory onBack={() => setCurrentView("home")} />
-        </div>
-      </div>
-    );
-  }
-
-  // MAIN HOME VIEW -------------------------------------------------
+  // MAIN HOME VIEW (Public or Authenticated Landing Page) -------------------------------------------------
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Dynamic Background Image */}
-      {/* Changes based on active theme with overlay */}
       <div className="fixed inset-0 z-0">
         <div
           className="w-full h-full bg-cover bg-center bg-no-repeat transition-all duration-1000"
@@ -162,7 +193,6 @@ export default function HomePage() {
       </div>
 
       {/* Theme Toggle Button */}
-      {/* Animated button for dark/light mode switching */}
       <motion.button
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -173,53 +203,106 @@ export default function HomePage() {
         {theme === "dark" ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-purple-600" />}
       </motion.button>
 
-      {/* Login and Signup Buttons */}
+      {/* Auth/Navigation Buttons */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="fixed top-6 left-6 z-50 flex gap-2"
+        className="fixed top-6 left-6 z-50 flex gap-2 flex-wrap" // Added flex-wrap for better layout
       >
-        <Link to="/login">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm border border-white/30"
-          >
-            Login
-          </Button>
-        </Link>
-        <Link to="/signup">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm border border-white/30"
-          >
-            Sign Up
-          </Button>
-        </Link>
-        {/* View Navigation buttons, now including Profile and Journal */}
-        {["home", "garden", "rituals", "profile", "journal"].map((view) => (
-          <Button
-            key={view}
-            variant={currentView === view ? "default" : "ghost"}
-            size="sm"
-            className={`${
-              currentView === view
-                ? "bg-healing-teal/80 text-white"
-                : "bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30"
-            } backdrop-blur-sm border border-white/30`}
-            onClick={() => setCurrentView(view)}
-          >
-            {view === "home" && <Heart className="w-4 h-4 mr-2" />}
-            {view === "garden" && "🌱"}
-            {view === "rituals" && "🌙"}
-            {view === "profile" && "👤"} {/* Icon for Profile */}
-            {view === "journal" && "📖"} {/* Icon for Journal */}
-            {view.charAt(0).toUpperCase() + view.slice(1)}
-          </Button>
-        ))}
+        {!isAuthenticated && ( // Only show Login/Signup if not authenticated
+          <>
+            <Link to="/login">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm border border-white/30"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm border border-white/30"
+              >
+                Sign Up
+              </Button>
+            </Link>
+          </>
+        )}
+
+        {/* View Navigation buttons (always available) */}
+        {/* Only show these navigation buttons on the main Home view (when not in sub-components) */}
+        {currentView === "home" && (
+          <>
+            {isAuthenticated && ( // Only show profile/journal if authenticated
+              <>
+                <Button
+                  variant={currentView === "profile" ? "default" : "ghost"}
+                  size="sm"
+                  className={`${
+                    currentView === "profile"
+                      ? "bg-healing-teal/80 text-white"
+                      : "bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30"
+                  } backdrop-blur-sm border border-white/30`}
+                  onClick={() => setCurrentView("profile")}
+                >
+                  <User className="w-4 h-4 mr-2" /> Profile
+                </Button>
+                <Button
+                  variant={currentView === "journal" ? "default" : "ghost"}
+                  size="sm"
+                  className={`${
+                    currentView === "journal"
+                      ? "bg-healing-teal/80 text-white"
+                      : "bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30"
+                  } backdrop-blur-sm border border-white/30`}
+                  onClick={() => setCurrentView("journal")}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" /> Journal
+                </Button>
+              </>
+            )}
+            <Button
+              variant={currentView === "garden" ? "default" : "ghost"}
+              size="sm"
+              className={`${
+                currentView === "garden"
+                  ? "bg-healing-teal/80 text-white"
+                  : "bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30"
+              } backdrop-blur-sm border border-white/30`}
+              onClick={() => setCurrentView("garden")}
+            >
+              🌱 Garden
+            </Button>
+            <Button
+              variant={currentView === "rituals" ? "default" : "ghost"}
+              size="sm"
+              className={`${
+                currentView === "rituals"
+                  ? "bg-healing-teal/80 text-white"
+                  : "bg-white/20 dark:bg-black/20 text-white hover:bg-white/30 dark:hover:bg-black/30"
+              } backdrop-blur-sm border border-white/30`}
+              onClick={() => setCurrentView("rituals")}
+            >
+              🌙 Rituals
+            </Button>
+            {isAuthenticated && ( // Show Logout button only if authenticated
+              <Button
+                variant="ghost"
+                size="sm"
+                className="bg-red-600/80 hover:bg-red-700 dark:bg-red-700/80 dark:hover:bg-red-800 text-white backdrop-blur-sm border border-white/30"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Logout
+              </Button>
+            )}
+          </>
+        )}
       </motion.div>
+
 
       {/* Central Content Area */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
@@ -299,7 +382,7 @@ export default function HomePage() {
           </motion.p>
         </motion.div>
 
-        {/* Main CTA Button */}
+        {/* Main CTA Button - "Share Your Day" */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -327,7 +410,6 @@ export default function HomePage() {
       </div>
 
       {/* First Visit Animation */}
-      {/* Special animation shown only on initial visit */}
       {isFirstVisit && (
         <motion.div
           className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
@@ -347,7 +429,6 @@ export default function HomePage() {
       )}
 
       {/* Ambient Floating Particles */}
-      {/* Background animation elements for visual interest */}
       <div className="fixed inset-0 pointer-events-none z-5">
         {[...Array(12)].map((_, i) => (
           <motion.div

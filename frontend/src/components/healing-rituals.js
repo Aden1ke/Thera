@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "./../components/ui/card" // Ensure correct path for ui components
+import { Card, CardContent, CardHeader, CardTitle } from "./../components/ui/card"
 import { Button } from './../components/ui/button'
 import { Textarea } from './../components/ui/textarea'
 import { Moon, Sun, Heart, Feather, Sparkles, ArrowLeft, Play } from "lucide-react"
@@ -64,13 +64,14 @@ export default function HealingRituals({ onBack }) {
   const [isVideoLoading, setIsVideoLoading] = useState(false)
   const [videoError, setVideoError] = useState("")
 
-  // YouTube API integration
+  // YouTube API integration - FIXED ENDPOINT
   const searchYouTubeVideos = async (query) => {
     setIsVideoLoading(true)
-    setVideoError("") // Clear any previous error
+    setVideoError("")
 
     try {
-      const response = await fetch(`/api/Youtube?q=${encodeURIComponent(query)}`)
+      // CORRECTED ENDPOINT PATH
+      const response = await fetch(`/api/Youtube/search?q=${encodeURIComponent(query)}`)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -86,7 +87,7 @@ export default function HealingRituals({ onBack }) {
 
       setVideos(data.videos)
     } catch (error) {
-      setVideoError(`Failed to load videos: ${error.message}. Please try again.`) // More informative error
+      setVideoError(`Failed to load videos: ${error.message}. Please try again.`)
       console.error("YouTube API error in frontend fetch:", error)
     } finally {
       setIsVideoLoading(false)
@@ -97,8 +98,8 @@ export default function HealingRituals({ onBack }) {
     setActiveRitual(ritualId)
     setRitualInput("")
     setRitualComplete(false)
-    setSelectedVideo(null) // Reset selected video when starting a new ritual
-    setVideos([]) // Clear previous videos
+    setSelectedVideo(null)
+    setVideos([])
 
     const ritual = rituals.find((r) => r.id === ritualId)
     if (ritual?.youtubeQuery) {
@@ -122,7 +123,7 @@ export default function HealingRituals({ onBack }) {
 
   // useEffect to clear video errors if active ritual changes or is dismissed
   useEffect(() => {
-      setVideoError(""); // Clear error when ritual selection changes
+      setVideoError("");
   }, [activeRitual]);
 
 
@@ -148,7 +149,10 @@ export default function HealingRituals({ onBack }) {
           <div className="space-y-4">
             <h3 className="text-white text-lg font-medium text-center">Choose a guided session:</h3>
             {isVideoLoading ? (
-              <div className="text-center text-white/80">Loading videos...</div>
+              <div className="flex flex-col items-center justify-center p-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                <p className="text-white/80">Searching for videos...</p>
+              </div>
             ) : (
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {videos.map((video) => (
@@ -188,6 +192,7 @@ export default function HealingRituals({ onBack }) {
                 width="100%"
                 height="200"
                 // FIX: Corrected YouTube embed URL format here
+                // THIS IS THE CRITICAL LINE THAT WAS REPEATEDLY INCORRECT
                 src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1&rel=0`}
                 title={selectedVideo.title}
                 frameBorder="0"

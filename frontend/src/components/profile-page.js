@@ -1,10 +1,9 @@
-// /data/data/com.termux/files/home/Thera/frontend/src/components/profile-page.js
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "./../components/ui/card";
 import { Input } from "./../components/ui/input";
 import { Textarea } from "./../components/ui/textarea";
-import { ArrowLeft, User, Heart, Shield, Save, LogOut } from "lucide-react"; // Import LogOut icon
+import { ArrowLeft, User, Heart, Shield, Save, LogOut } from "lucide-react";
 import EmotionalProgressBar from "./emotional-progress-bar";
 import { Button } from './../components/ui/button';
 
@@ -201,41 +200,18 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     }
   };
 
-  // --- MODIFIED Logout Function ---
-  const handleLogout = async () => { // Make it async
-    try {
-      const authData = JSON.parse(localStorage.getItem("thera_auth"));
-      const token = authData ? authData.token : null;
+  // --- SIMPLE FRONTEND-ONLY Logout Function ---
+  const handleLogout = () => {
+    // Clear all authentication-related items from local storage
+    localStorage.removeItem("thera_auth");
+    localStorage.removeItem("thera_user_profile"); // Clear user profile data too
 
-      // Make an API call to the backend logout endpoint
-      // It's important to send the token even for logout so the backend knows WHICH user to log out
-      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: "POST", // Use POST for logout actions
-        headers: {
-          "Content-Type": "application/json",
-          // Send the authorization header to allow the backend to verify the token
-          // and identify the user to invalidate their refresh token
-          "Authorization": token ? `Bearer ${token}` : '',
-        },
-      });
-
-      if (!response.ok) {
-        // Log the error but still proceed with client-side logout
-        // as the user's main concern is usually clearing local data.
-        // Server-side invalidation might have failed, but client-side should still proceed.
-        console.error("Backend logout failed:", await response.json());
-      }
-    } catch (error) {
-      console.error("Error during backend logout API call:", error);
-    } finally {
-      // ALWAYS perform client-side logout actions, even if backend call fails.
-      // This ensures the user is logged out from the client's perspective.
-      if (onLogout) {
-        onLogout(); // This call should handle clearing local storage and redirecting
-      }
+    // Call the onLogout prop to handle further actions (e.g., redirect to login)
+    if (onLogout) {
+      onLogout();
     }
   };
-  // --- End MODIFIED Logout Function ---
+  // --- End SIMPLE FRONTEND-ONLY Logout Function ---
 
 
   if (loadingProfile) {
@@ -294,7 +270,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2"> {/* Added div for grouping buttons */}
+              <div className="flex items-center gap-2">
                 <Button
                   onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
                   disabled={isSaving}
@@ -367,7 +343,8 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
                   placeholder="Enter your name"
-                />                                                                                                                  </div>
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">Email</label>
                 <Input
@@ -404,7 +381,8 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
           </CardContent>
         </Card>
 
-        {/* Emergency Contact */}                                                                                             <Card className="bg-white/10 dark:bg-black/20 backdrop-blur-sm border-white/20 dark:border-gray-600/30">
+        {/* Emergency Contact */}
+        <Card className="bg-white/10 dark:bg-black/20 backdrop-blur-sm border-white/20 dark:border-gray-600/30">
           <CardHeader>
             <CardTitle className="text-green-800 dark:text-green-200 flex items-center gap-2">
               <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -421,7 +399,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   Contact Name
                 </label>
                 <Input
-                  value={emergencyContact.name} // Changed from 'em' to 'emergencyContact'
+                  value={emergencyContact.name}
                   onChange={(e) => updateProfile("emergencyContact.name", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"

@@ -1,18 +1,11 @@
+// backend/src/api/routes/youTubeRouter.js
 import express from 'express';
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
-import cors from 'cors'; // ADDED CORS SUPPORT
+import fetch from 'node-fetch'; // Make sure node-fetch is installed (npm install node-fetch)
+import dotenv from 'dotenv'; // Make sure dotenv is installed (npm install dotenv)
 
-dotenv.config();
+dotenv.config(); // Loads environment variables from .env file
 
 const youTubeRouter = express.Router();
-
-// ADDED CORS MIDDLEWARE
-youTubeRouter.use(cors({
-  origin: process.env.CORS_ORIGIN || '*', // Consider tightening this to your frontend URL in production
-  methods: ['GET', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
 
 youTubeRouter.get('/search', async (req, res) => {
   const query = req.query.q;
@@ -25,15 +18,12 @@ youTubeRouter.get('/search', async (req, res) => {
   try {
     const API_KEY = process.env.YOUTUBE_API_KEY;
 
-    // ENHANCED API KEY CHECK
+    // Debugging: Log whether API key is loaded
     console.log("Backend: YouTube API Key Status:", API_KEY ? "Loaded" : "NOT LOADED - Check .env file!");
 
     if (!API_KEY) {
-      console.error("YouTube API key missing from .env");
-      return res.status(500).json({
-        error: "Server configuration error",
-        message: "YouTube API key not configured. Please check your .env file."
-      });
+      console.error("YouTube API key is not configured in .env. Please ensure it's set.");
+      return res.status(500).json({ error: "API configuration error: YouTube API key missing" });
     }
 
     // Make the actual API call to Youtube
@@ -44,6 +34,7 @@ youTubeRouter.get('/search', async (req, res) => {
     if (!searchResponse.ok) {
       const errorText = await searchResponse.text();
       console.error(`Youtube API request failed: ${searchResponse.status} - ${errorText}`);
+      // Propagate the actual YouTube API error message if possible
       try {
         const errorJson = JSON.parse(errorText);
         return res.status(searchResponse.status).json({ error: errorJson.error?.message || `YouTube API error: ${errorText}` });
@@ -56,7 +47,7 @@ youTubeRouter.get('/search', async (req, res) => {
 
     if (!searchData.items || searchData.items.length === 0) {
       console.log(`No YouTube videos found for query: "${query}"`);
-      return res.json({ videos: [] });
+      return res.json({ videos: [] }); // No videos found
     }
 
     // Get video IDs for duration lookup
@@ -71,6 +62,7 @@ youTubeRouter.get('/search', async (req, res) => {
     if (detailsResponse.ok) {
       const detailsData = await detailsResponse.json();
       detailsData.items?.forEach((item) => {
+        // Convert ISO 8601 duration to readable format
         const duration = item.contentDetails.duration;
         const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
 
@@ -88,6 +80,7 @@ youTubeRouter.get('/search', async (req, res) => {
     } else {
         const errorText = await detailsResponse.text();
         console.warn(`YouTube details API request failed: ${detailsResponse.status} - ${errorText}`);
+        // Do not throw, just log and continue without durations if details fetch fails
     }
 
     // Format the response for the frontend
@@ -104,24 +97,26 @@ youTubeRouter.get('/search', async (req, res) => {
     return res.json({ videos: formattedVideos });
 
   } catch (error) {
-    console.error("Error fetching YouTube videos in backend:", error);
+    console.error("Error fetching YouTube videos in backend:", error); // Changed for clarity
 
-    // ENHANCED FALLBACK (using more realistic fallback thumbnails)
+    // Fallback content in case of API failure
+    // These fallback videos should have valid YouTube IDs (though they won't play with these specific IDs)
+    // For actual fallbacks, you'd want pre-selected, known good YouTube video IDs.
     const fallbackVideos = [
       {
-        id: "inP4QMnBDF8", // A real example ID for a breathing exercise
-        title: "Guided Breathing Exercise (Fallback)",
-        thumbnail: "https://img.youtube.com/vi/inP4QMnBDF8/mqdefault.jpg",
-        channel: "Mindfulness Channel",
+        id: "S7P2yR5Q_2Q", // Example YouTube video ID for guided breathing
+        title: "Guided Breathing Exercise - 5 Minutes (Fallback)",
+        thumbnail: "https://i.ytimg.com/vi/S7P2yR5Q_2Q/mqdefault.jpg", // Example placeholder thumbnail
+        channel: "Mindfulness Guides",
         duration: "5:00",
         description: "A gentle breathing exercise to calm your mind...",
         isFallback: true,
       },
       {
-        id: "ssss7V1_eyA", // A real example ID for a meditation
+        id: "aL3Fh4YJ3eU", // Example YouTube video ID for meditation
         title: "Beginner's Meditation - 10 Minutes (Fallback)",
-        thumbnail: "https://img.youtube.com/vi/ssss7V1_eyA/mqdefault.jpg",
-        channel: "Calm Studio",
+        thumbnail: "https://i.ytimg.com/vi/aL3Fh4YJ3eU/mqdefault.jpg", // Example placeholder thumbnail
+        channel: "Calm Mind",
         duration: "10:00",
         description: "Find peace through mindful awareness...",
         isFallback: true,
@@ -129,9 +124,9 @@ youTubeRouter.get('/search', async (req, res) => {
     ];
 
     return res.status(500).json({
-      videos: fallbackVideos,
+      videos: fallbackVideos, // Still return videos, but flag them as fallback
       fallback: true,
-      error: `Failed to fetch videos from YouTube: ${error.message || 'Unknown error'}. Using fallback videos.`
+      error: `Failed to fetch videos from YouTube: ${error.message || 'Unknown error'}`,
     });
   }
 });

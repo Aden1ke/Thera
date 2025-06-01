@@ -151,7 +151,8 @@ class AuthService {
         console.error('Error in updateUserById:', error);
         throw new Error('Failed to save profile.');
     }
-}
+    }
+ 
 }
 
 export default new AuthService();
