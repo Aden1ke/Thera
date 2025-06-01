@@ -49,8 +49,8 @@ export default function LoginPage() {
           "thera_auth",
           JSON.stringify({
             isAuthenticated: true,
-            user: data.user,
-            token: data.token,
+            user: data.data.user,
+            token: data.data.token,
             timestamp: Date.now(),
           }),
         );

@@ -65,13 +65,21 @@ export default function TheraChat({ onBack }) {
     };
   }, [messages, isTyping]); // Added isTyping to dependency array to ensure scroll happens after typing indicator appears/disappears
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
   const getTheraResponse = async (prompt) => {
     setIsTyping(true);
     try {
-      const res = await fetch('/api/chat', {
+      // Get the token from localStorage
+      const authData = JSON.parse(localStorage.getItem("thera_auth"));
+      const token = authData?.token;
+
+      const res = await fetch(`${API_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+        body: JSON.stringify({ text: prompt }),
       });
 
       const data = await res.json();

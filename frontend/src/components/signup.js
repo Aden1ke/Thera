@@ -33,7 +33,6 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const { theme } = useTheme(); // Now correctly used to pick the background image
 
-  // Form state - REMOVED 'bio' from here, no need for firstName/lastName in state as they are derived
   const [formData, setFormData] = useState({
     // Account details
     email: "",
@@ -114,7 +113,7 @@ export default function SignupPage() {
 
     try {
       // Destructure relevant fields for the API call
-      const { email, password, fullName, phone } = formData;
+      const { email, password, fullName, phone, emergencyName, emergencyRelationship, emergencyEmail, emergencyPhone } = formData;
 
       // Split fullName into firstName and lastName to match backend model
       const nameParts = fullName.trim().split(/\s+/);
@@ -135,7 +134,13 @@ export default function SignupPage() {
           password,
           firstName, // Sending parsed first name
           lastName,  // Sending parsed last name
-          phone
+          phone,
+          emergencyContact: {
+            name: emergencyName,
+            relationship: emergencyRelationship,
+            email: emergencyEmail,
+            phone: emergencyPhone,
+          }
           // 'bio' is intentionally not sent as it was removed from the form
         }),
       });

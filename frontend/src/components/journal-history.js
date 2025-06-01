@@ -23,7 +23,8 @@ export default function JournalHistory({ onBack }) {
       setError(null);
       try {
         // Retrieve token from localStorage (or your auth context/store)
-        const token = localStorage.getItem("authToken");
+        const authData = JSON.parse(localStorage.getItem("thera_auth"));
+        const token = authData?.token;
 
         if (!token) {
           setError("Authentication token not found. Please log in.");

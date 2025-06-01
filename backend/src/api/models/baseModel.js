@@ -101,6 +101,15 @@ class BaseModel {
 
         return data;
     }
+
+    async findOneAndUpdate(filter, update, options = {}) {
+        try {
+            return await this.model.findOneAndUpdate(filter, update, options);
+        } catch (error) {
+            console.error('Error updating document:', error);
+            throw new Error('Failed to update document');
+        }
+    }
 }
 
 export default BaseModel;
