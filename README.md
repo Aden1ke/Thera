@@ -197,6 +197,14 @@ Here are some glimpses of Thera in action:
 ## 🧰 Installation
 
 ### Clone the repository:
+https://github.com/Aden1ke/Thera.git
+
+## Deployment
+### General Deployment Notes
+Separate Deployments: It's recommended to deploy your frontend and backend as separate services.
+Environment Variables: Ensure all necessary environment variables are set correctly in your deployment environment (e.g., Vercel, Netlify for frontend; Heroku, Render, AWS, DigitalOcean for backend).
+CORS: Adjust CORS origins in your backend (server.js and youTubeRoutes.js) to match your deployed frontend URL(s).
+Database: Ensure your MongoDB database is accessible from your backend deployment.
 
 #### .env for frontend
 NEXT_PUBLIC_WS_ENDPOINT="ws://localhost:5000" # For local development
@@ -210,6 +218,8 @@ OPENAI_API_KEY="sk-fakeopenaiapikey0123456789abcdefghijklmnopqrstuvwxyz"
 YOUTUBE_API_KEY="AIzaSyB_fakeyoutubeapikey1234567890"
 JWT_SECRET="FakeSuperSecretKeyForJWTsUsedInProdOnlyPleaseDontShare"
 FRONTEND_URL="http://localhost:3000" # For local development
+
+
 
 
 ```bash
