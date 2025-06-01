@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "./../components/ui/card";
 import { Input } from "./../components/ui/input";
 import { Textarea } from "./../components/ui/textarea";
-import { ArrowLeft, User, Heart, Shield, Save, LogOut } from "lucide-react"; // Import LogOut icon
+import { ArrowLeft, User, Heart, Shield, Save } from "lucide-react";
 import EmotionalProgressBar from "./emotional-progress-bar";
 import { Button } from './../components/ui/button';
 
-export default function ProfilePage({ onBack, emotionalState, onLogout }) {
+export default function ProfilePage({ onBack, emotionalState }) {
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -24,8 +24,8 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileError, setProfileError] = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(true); // New loading state
+  const [profileError, setProfileError] = useState(""); // New error state
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -33,7 +33,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     try {
       console.log("🚨 EMERGENCY: Contacting emergency contact", profile.emergencyContact);
 
-      await fetch(`${API_BASE_URL}/api/emergency-contact`, {
+      await fetch(`${API_BASE_URL}/api/emergency-contact`, { // Use API_BASE_URL
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -45,7 +45,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     } catch (error) {
       console.error("Failed to send emergency notification:", error);
     }
-  }, [profile, emotionalState, API_BASE_URL]);
+  }, [profile, emotionalState, API_BASE_URL]); // Add API_BASE_URL to dependencies
 
   useEffect(() => {
     const position = 50 + (emotionalState.wellness - emotionalState.distress) / 2;
@@ -54,6 +54,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     }
   }, [emotionalState, profile.emergencyContact, triggerEmergencyContact]);
 
+  // Function to fetch user profile from the backend
   const fetchUserProfile = useCallback(async () => {
     setLoadingProfile(true);
     setProfileError("");
@@ -65,7 +66,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
         return;
       }
 
-      const userId = authData.user._id || authData.user.id;
+      const userId = authData.user._id || authData.user.id; // Get user ID from stored data
       if (!userId) {
         setProfileError("User ID not found in authentication data.");
         setLoadingProfile(false);
@@ -76,7 +77,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authData.token}`,
+          "Authorization": `Bearer ${authData.token}`, // Send the JWT token
         },
       });
 
@@ -88,7 +89,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
       const data = await response.json();
       const user = data.data.user;
       setProfile(prevProfile => ({
-        ...prevProfile,
+        ...prevProfile, // Keep default values for fields not returned by backend if necessary
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         email: user.email,
         phone: user.phone || "",
@@ -101,6 +102,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
         },
         joinDate: user.joinDate || (user.createdAt ? user.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]),
       }));
+      // Also update the local storage with the full profile
       localStorage.setItem("thera_user_profile", JSON.stringify({
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         email: user.email,
@@ -122,24 +124,27 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     }
   }, [API_BASE_URL]);
 
+  // Load profile data from localStorage on component mount OR fetch from backend
   useEffect(() => {
     const storedProfile = localStorage.getItem("thera_user_profile");
     if (storedProfile) {
       try {
         setProfile(JSON.parse(storedProfile));
-        setLoadingProfile(false);
+        setLoadingProfile(false); // If profile found locally, stop loading
       } catch (error) {
         console.error("Failed to parse stored profile:", error);
+        // If parsing fails, try fetching from backend
         fetchUserProfile();
       }
     } else {
+      // If no profile in localStorage, fetch from backend
       fetchUserProfile();
     }
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile]); // Depend on fetchUserProfile
 
   const handleSave = async () => {
     setIsSaving(true);
-    setProfileError("");
+    setProfileError(""); // Clear previous errors
 
     try {
       const authData = JSON.parse(localStorage.getItem("thera_auth"));
@@ -147,20 +152,22 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
         throw new Error("User not authenticated. Please log in again.");
       }
 
-      const userId = authData.user._id || authData.user.id;
+      const userId = authData.user._id || authData.user.id; // Get user ID
       if (!userId) {
         throw new Error("User ID not found for saving profile.");
       }
 
       const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        method: "PUT",
+        method: "PUT", // Or PATCH for partial updates
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${authData.token}`,
         },
         body: JSON.stringify({
-          name: profile.name,
-          firstName: profile.name.split(' ')[0],
+          // Send only the fields that can be updated by the user
+          // Ensure your backend's update route handles these fields
+          name: profile.name, // If your backend expects a combined name
+          firstName: profile.name.split(' ')[0], // Or derive firstName/lastName from 'name' if schema needs it
           lastName: profile.name.split(' ').slice(1).join(' '),
           email: profile.email,
           phone: profile.phone,
@@ -174,8 +181,9 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
         throw new Error(errorData.message || "Failed to save profile.");
       }
 
+      // If save is successful, update localStorage with the latest data from backend
       const updatedUserData = await response.json();
-      localStorage.setItem("thera_user_profile", JSON.stringify(updatedUserData.user));
+      localStorage.setItem("thera_user_profile", JSON.stringify(updatedUserData.user)); // Assuming backend returns updated user
 
       setIsEditing(false);
     } catch (error) {
@@ -201,42 +209,8 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     }
   };
 
-  // --- MODIFIED Logout Function ---
-  const handleLogout = async () => { // Make it async
-    try {
-      const authData = JSON.parse(localStorage.getItem("thera_auth"));
-      const token = authData ? authData.token : null;
-
-      // Make an API call to the backend logout endpoint
-      // It's important to send the token even for logout so the backend knows WHICH user to log out
-      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: "POST", // Use POST for logout actions
-        headers: {
-          "Content-Type": "application/json",
-          // Send the authorization header to allow the backend to verify the token
-          // and identify the user to invalidate their refresh token
-          "Authorization": token ? `Bearer ${token}` : '',
-        },
-      });
-
-      if (!response.ok) {
-        // Log the error but still proceed with client-side logout
-        // as the user's main concern is usually clearing local data.
-        // Server-side invalidation might have failed, but client-side should still proceed.
-        console.error("Backend logout failed:", await response.json());
-      }
-    } catch (error) {
-      console.error("Error during backend logout API call:", error);
-    } finally {
-      // ALWAYS perform client-side logout actions, even if backend call fails.
-      // This ensures the user is logged out from the client's perspective.
-      if (onLogout) {
-        onLogout(); // This call should handle clearing local storage and redirecting
-      }
-    }
-  };
-  // --- End MODIFIED Logout Function ---
-
+  // Removed the useEffect that saves on profile change, as we now save explicitly via handleSave
+  // And update localStorage only after a successful backend save/fetch.
 
   if (loadingProfile) {
     return (
@@ -250,6 +224,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <p className="text-red-600 dark:text-red-400">Error: {profileError}</p>
+        {/* Optionally, add a retry button */}
         <Button onClick={fetchUserProfile} className="ml-4 bg-green-600 hover:bg-green-700 text-white">Retry</Button>
       </div>
     );
@@ -294,33 +269,22 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2"> {/* Added div for grouping buttons */}
-                <Button
-                  onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-                  disabled={isSaving}
-                  className="bg-green-700/80 hover:bg-green-800 dark:bg-green-800/80 dark:hover:bg-green-900 text-white"
-                >
-                  {isSaving ? (
-                    "Saving..."
-                  ) : isEditing ? (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save
-                    </>
-                  ) : (
-                    "Edit Profile"
-                  )}
-                </Button>
-                {/* --- Logout Button --- */}
-                <Button
-                  onClick={handleLogout}
-                  className="bg-red-600/80 hover:bg-red-700 dark:bg-red-700/80 dark:hover:bg-red-800 text-white"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
-                {/* --- End Logout Button --- */}
-              </div>
+              <Button
+                onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
+                disabled={isSaving}
+                className="bg-green-700/80 hover:bg-green-800 dark:bg-green-800/80 dark:hover:bg-green-900 text-white"
+              >
+                {isSaving ? (
+                  "Saving..."
+                ) : isEditing ? (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </>
+                ) : (
+                  "Edit Profile"
+                )}
+              </Button>
             </div>
           </CardHeader>
         </Card>
@@ -367,7 +331,8 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
                   placeholder="Enter your name"
-                />                                                                                                                  </div>
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">Email</label>
                 <Input
@@ -404,7 +369,8 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
           </CardContent>
         </Card>
 
-        {/* Emergency Contact */}                                                                                             <Card className="bg-white/10 dark:bg-black/20 backdrop-blur-sm border-white/20 dark:border-gray-600/30">
+        {/* Emergency Contact */}
+        <Card className="bg-white/10 dark:bg-black/20 backdrop-blur-sm border-white/20 dark:border-gray-600/30">
           <CardHeader>
             <CardTitle className="text-green-800 dark:text-green-200 flex items-center gap-2">
               <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -421,11 +387,11 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   Contact Name
                 </label>
                 <Input
-                  value={emergencyContact.name} // Changed from 'em' to 'emergencyContact'
+                  value={emergencyContact.name}
                   onChange={(e) => updateProfile("emergencyContact.name", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
-                  placeholder="Emergency Contact Name"
+                  placeholder="Emergency contact name"
                 />
               </div>
               <div>
@@ -437,13 +403,11 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   onChange={(e) => updateProfile("emergencyContact.relationship", e.target.value)}
                   disabled={!isEditing}
                   className="bg-white/10 dark:bg-black/20 border-white/20 dark:border-gray-600/50 text-green-800 dark:text-green-200 placeholder:text-green-600/50 dark:placeholder:text-green-500/50"
-                  placeholder="e.g., Parent, Friend"
+                  placeholder="e.g., Mother, Friend, Partner"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">
-                  Contact Email
-                </label>
+                <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">Email</label>
                 <Input
                   type="email"
                   value={emergencyContact.email}
@@ -454,9 +418,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">
-                  Contact Phone
-                </label>
+                <label className="block text-sm font-medium text-green-700 dark:text-green-400 mb-2">Phone</label>
                 <Input
                   value={emergencyContact.phone}
                   onChange={(e) => updateProfile("emergencyContact.phone", e.target.value)}

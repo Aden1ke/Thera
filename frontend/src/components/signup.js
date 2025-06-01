@@ -478,9 +478,36 @@ export default function SignupPage() {
       <div className="w-full max-w-md z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           {/* Logo */}
-          <div className="flex flex-col items-center justify-center mb-6">
-            <img src="/logo-icon.png" alt="Thera Logo" className="h-24 w-24 mb-2" />
-            <span className="text-3xl font-bold text-green-800 dark:text-green-300">Thera</span>
+            {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="relative w-16 h-16">
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-green-600 via-green-700 to-green-800 dark:from-green-700 dark:via-green-800 dark:to-green-900 rounded-full"
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.8, 1, 0.8],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }}
+              />
+              <motion.div
+                className="absolute inset-2 bg-white/30 dark:bg-black/20 rounded-full flex items-center justify-center"
+                animate={{
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                  delay: 0.5,
+                }}
+              >
+                <span className="text-2xl">🌿</span>
+              </motion.div>
+            </div>
           </div>
           <Card className="w-full bg-white/70 dark:bg-black/60 backdrop-blur-md border-green-200 dark:border-green-800 shadow-xl overflow-hidden">
             <AnimatePresence mode="wait">

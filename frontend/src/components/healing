@@ -1,11 +1,14 @@
+// /data/data/com.termux/files/home/Thera/frontend/src/components/healing-rituals.js
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "./../components/ui/card" // Ensure correct path for ui components
-import { Button } from './../components/ui/button'
-import { Textarea } from './../components/ui/textarea'
-import { Moon, Sun, Heart, Feather, Sparkles, ArrowLeft, Play } from "lucide-react"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "./../components/ui/card";
+import { Button } from './../components/ui/button';
+//import { Progress } from "./../components/ui/progress";
+import { Textarea } from './../components/ui/textarea';
+import { Moon, Sun, Heart, Feather, Sparkles, ArrowLeft, Play } from "lucide-react";
+
 
 const rituals = [
   {
@@ -67,15 +70,14 @@ export default function HealingRituals({ onBack }) {
   // YouTube API integration
   const searchYouTubeVideos = async (query) => {
     setIsVideoLoading(true)
-    setVideoError("") // Clear any previous error
+    setVideoError("")
 
     try {
-      const response = await fetch(`/api/Youtube?q=${encodeURIComponent(query)}`)
+      // Call our API route instead of mocking data
+      const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`)
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        const errorMessage = errorData.error || errorData.message || `API error: ${response.status}`;
-        throw new Error(errorMessage);
+        throw new Error(`API error: ${response.status}`)
       }
 
       const data = await response.json()
@@ -86,8 +88,8 @@ export default function HealingRituals({ onBack }) {
 
       setVideos(data.videos)
     } catch (error) {
-      setVideoError(`Failed to load videos: ${error.message}. Please try again.`) // More informative error
-      console.error("YouTube API error in frontend fetch:", error)
+      setVideoError("Unable to load videos. Please try again.")
+      console.error("YouTube API error:", error)
     } finally {
       setIsVideoLoading(false)
     }
@@ -97,8 +99,7 @@ export default function HealingRituals({ onBack }) {
     setActiveRitual(ritualId)
     setRitualInput("")
     setRitualComplete(false)
-    setSelectedVideo(null) // Reset selected video when starting a new ritual
-    setVideos([]) // Clear previous videos
+    setSelectedVideo(null)
 
     const ritual = rituals.find((r) => r.id === ritualId)
     if (ritual?.youtubeQuery) {
@@ -119,12 +120,6 @@ export default function HealingRituals({ onBack }) {
   const selectVideo = (video) => {
     setSelectedVideo(video)
   }
-
-  // useEffect to clear video errors if active ritual changes or is dismissed
-  useEffect(() => {
-      setVideoError(""); // Clear error when ritual selection changes
-  }, [activeRitual]);
-
 
   const getRitualContent = (ritual) => {
     if (ritualComplete) {
@@ -187,7 +182,6 @@ export default function HealingRituals({ onBack }) {
               <iframe
                 width="100%"
                 height="200"
-                // FIX: Corrected YouTube embed URL format here
                 src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1&rel=0`}
                 title={selectedVideo.title}
                 frameBorder="0"
@@ -217,12 +211,7 @@ export default function HealingRituals({ onBack }) {
         )}
 
         {/* Ritual-specific content when no video is selected */}
-        {/* Only show these if no videos were found OR if the rituals are 'release' or 'gratitude' which don't inherently require videos */}
-        {!selectedVideo && (
-          (videos.length === 0 && !isVideoLoading && !videoError) ||
-          ritual.id === "release" ||
-          ritual.id === "gratitude"
-        ) && (
+        {!selectedVideo && videos.length === 0 && !isVideoLoading && (
           <>
             {ritual.id === "release" && (
               <div className="space-y-4">
@@ -271,11 +260,10 @@ export default function HealingRituals({ onBack }) {
               </div>
             )}
 
-            {(ritual.id === "breathing" || ritual.id === "meditation" || ritual.id === "energy") &&
-             videos.length === 0 && !isVideoLoading && !videoError && (
+            {(ritual.id === "breathing" || ritual.id === "meditation" || ritual.id === "energy") && (
               <div className="text-center space-y-6">
                 <div className="text-4xl">🧘‍♀️</div>
-                <p className="text-white/90">No guided sessions found. You can still continue the ritual without a video.</p>
+                <p className="text-white/90">Loading guided sessions for you...</p>
                 <Button
                   onClick={completeRitual}
                   className="bg-white/20 hover:bg-white/30 text-white border border-white/30"
@@ -386,3 +374,4 @@ export default function HealingRituals({ onBack }) {
     </div>
   )
 }
+
