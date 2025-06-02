@@ -71,7 +71,7 @@ export default function HealingRituals({ onBack }) {
 
     try {
       // CORRECTED ENDPOINT PATH
-      const response = await fetch(`/api/Youtube/search?q=${encodeURIComponent(query)}`)
+      const response = await fetch(`http://localhost:5000/api/Youtube/search?q=${encodeURIComponent(query)}`)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
