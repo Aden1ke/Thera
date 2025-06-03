@@ -1,66 +1,65 @@
-// src/components/Home/HomePage.js
 "use client"
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from '../../components/ui/button';
-import { MessageCircle, Moon, Sun, Heart, User, LogOut, BookOpen } from "lucide-react" // Added User, LogOut, BookOpen icons
-import { Link, useNavigate } from "react-router-dom"; // Import Link and useNavigate
-import ChatApp from '../chatApp/ChatApp';
+import { MessageCircle, Moon, Sun, Heart, User, LogOut, BookOpen } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom";
+import ChatApp from '../chatApp/ChatApp'; // Correct import path for ChatApp
 import SoulGarden from "../soul-garden";
 import HealingRituals from "../healing-rituals";
 import ProfilePage from "../profile-page";
 import JournalHistory from "../journal-history";
 import { useTheme } from '../../components/theme-provider';
+import { useEmotionalStateTracking } from '../useEmotionalStateTracking'; // Import the hook
 
 export default function HomePage() {
   const [showChat, setShowChat] = useState(false)
   const [currentView, setCurrentView] = useState("home")
-  const [emotionalState, setEmotionalState] = useState({
-    wellness: 65,
-    distress: 20,
-  })
   const [isFirstVisit, setIsFirstVisit] = useState(true)
   const { theme, setTheme } = useTheme();
 
-  // --- NEW: Authentication State Management  to handle logou---
+  // Authentication State Management
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate(); // Initialize useNavigate for redirection
+  const navigate = useNavigate();
+
+  // Initialize emotional state tracking
+  const { emotionalState, calculateAverageEmotionalState, setCriticalDistress } = useEmotionalStateTracking(isAuthenticated); //
 
   useEffect(() => {
-    // Check authentication status from localStorage on component mount
     const authData = localStorage.getItem("thera_auth");
     if (authData) {
       try {
         const parsedAuth = JSON.parse(authData);
         if (parsedAuth.isAuthenticated && parsedAuth.token) {
           setIsAuthenticated(true);
+          // When authenticated, trigger initial calculation of emotional state
+          calculateAverageEmotionalState();
         } else {
-          // If authData is corrupt or marked as not authenticated, clear it
           localStorage.removeItem("thera_auth");
           localStorage.removeItem("thera_user_profile");
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error("Error parsing auth data from localStorage:", error);
-        localStorage.removeItem("thera_auth"); // Clear bad data
+        localStorage.removeItem("thera_auth");
         localStorage.removeItem("thera_user_profile");
         setIsAuthenticated(false);
       }
     } else {
       setIsAuthenticated(false);
     }
-  }, []); // Run once on mount
+  }, [calculateAverageEmotionalState]); // Added calculateAverageEmotionalState to dependencies
 
-  // NEW: Logout Function
+  // Logout Function
   const handleLogout = () => {
     console.log("HomePage: Frontend logout initiated.");
-    // ProfilePage already cleared localStorage, we just update state and redirect
     setIsAuthenticated(false);
-    setCurrentView("home"); // Optionally revert to home view after logout
-    navigate('/login'); // Redirect to the login page
+    setCurrentView("home");
+    localStorage.removeItem("thera_auth"); // Clear auth token
+    localStorage.removeItem("thera_user_profile"); // Clear user profile
+    navigate('/login');
   };
-  // --- END NEW ---
 
   // First Visit Effect
   useEffect(() => {
@@ -72,7 +71,6 @@ export default function HomePage() {
 
   // Chat Handlers
   const handleShareDay = () => {
-    // Only allow chat if authenticated, otherwise redirect to login
     if (isAuthenticated) {
       setShowChat(true);
     } else {
@@ -80,15 +78,16 @@ export default function HomePage() {
     }
   }
 
-  const handleEmotionalUpdate = (wellness, distress) => {
-    setEmotionalState({ wellness, distress })
-  }
-
   // Conditional Rendering based on currentView state
-  // Only render these protected views if authenticated
   if (isAuthenticated) {
     if (showChat) {
-      return <ChatApp onEmotionalUpdate={handleEmotionalUpdate} onBack={() => setShowChat(false)} />
+      // Pass the emotionalState and the re-calculation function to ChatApp
+      return <ChatApp
+                onBack={() => setShowChat(false)}
+                emotionalState={emotionalState} 
+                calculateAverageEmotionalState={calculateAverageEmotionalState} 
+                setCriticalDistress={setCriticalDistress} 
+             />;
     }
 
     if (currentView === "garden") {
@@ -105,6 +104,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
           </div>
           <div className="relative z-10">
+            {/* Pass the emotionalState from the hook to SoulGarden */}
             <SoulGarden woundSeeds={[]} onBack={() => setCurrentView("home")} emotionalState={emotionalState} />
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
           </div>
           <div className="relative z-10">
-            {/* Pass the handleLogout function to ProfilePage */}
+            {/* Pass the emotionalState from the hook to ProfilePage */}
             <ProfilePage onBack={() => setCurrentView("home")} emotionalState={emotionalState} onLogout={handleLogout} />
           </div>
         </div>
@@ -177,8 +177,7 @@ export default function HomePage() {
     }
   }
 
-
-  // MAIN HOME VIEW (Public or Authenticated Landing Page) -------------------------------------------------
+  // MAIN HOME VIEW (Authenticated/Unauthenticated Landing Page)
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="fixed inset-0 z-0">
@@ -208,9 +207,9 @@ export default function HomePage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="fixed top-6 left-6 z-50 flex gap-2 flex-wrap" // Added flex-wrap for better layout
+        className="fixed top-6 left-6 z-50 flex gap-2 flex-wrap"
       >
-        {!isAuthenticated && ( // Only show Login/Signup if not authenticated
+        {!isAuthenticated && (
           <>
             <Link to="/login">
               <Button
@@ -234,10 +233,9 @@ export default function HomePage() {
         )}
 
         {/* View Navigation buttons (always available) */}
-        {/* Only show these navigation buttons on the main Home view (when not in sub-components) */}
         {currentView === "home" && (
           <>
-            {isAuthenticated && ( // Only show profile/journal if authenticated
+            {isAuthenticated && (
               <>
                 <Button
                   variant={currentView === "profile" ? "default" : "ghost"}
@@ -289,7 +287,7 @@ export default function HomePage() {
             >
               🌙 Rituals
             </Button>
-            {isAuthenticated && ( // Show Logout button only if authenticated
+            {isAuthenticated && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -302,7 +300,6 @@ export default function HomePage() {
           </>
         )}
       </motion.div>
-
 
       {/* Central Content Area */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
@@ -404,7 +401,7 @@ export default function HomePage() {
             transition={{ delay: 2, duration: 0.6 }}
             className="mt-4 text-sm text-white/70 drop-shadow-md"
           >
-            Thera is here to listen, understand, and grow with you 🌸
+            Thera is always here for you 🌸
           </motion.p>
         </motion.div>
       </div>

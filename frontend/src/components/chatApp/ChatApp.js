@@ -9,7 +9,51 @@ import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent} from '../../components/ui/card';
 
 
-export default function TheraChat({ onBack }) {
+const SUICIDE_KEYWORDS = [
+  "i want to die", "i can't go on", "end it all", "no point in living",
+  "kill myself", "suicide", "harm myself", "wish i wasn't here",
+  "i just want to disappear", "not worth living", "better off dead",
+  "goodbye world", "final goodbyes"
+];
+
+const sendEmergencyNotification = async (userProfile, currentEmotionalState, API_BASE_URL, token) => {
+  try {
+    if (!token || !userProfile || !userProfile.emergencyContact?.email) {
+      console.error("Cannot send emergency notification: missing auth, profile, or emergency contact.");
+      // Potentially show a user-facing message here, e.g., "Could not notify emergency contact due to missing information."
+      return false;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/emergency-contact`, { 
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`, 
+      },
+      body: JSON.stringify({
+        userProfile,
+        emotionalState: currentEmotionalState, // Pass the emotional state received
+        timestamp: new Date().toISOString(),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to send emergency notification: ${response.statusText}`);
+    }
+
+    console.log("Emergency notification sent successfully!");
+    // Inform the user: "Your emergency contact has been notified."
+    return true;
+  } catch (error) {
+    console.error("Error sending emergency notification:", error);
+    // Inform the user about the failure
+    return false;
+  }
+};
+
+
+export default function ChatApp({ onBack, emotionalState, calculateAverageEmotionalState, setCriticalDistress }) { // Receive new prop: setCriticalDistress
   const [messages, setMessages] = useState([
     {
       id: "welcome",
@@ -46,9 +90,6 @@ export default function TheraChat({ onBack }) {
         socketRef.current = null; // Clear ref
       }
       if (mediaRecorderRef.current) {
-        // Stop all tracks on the stream associated with mediaRecorder
-        // This part depends on how mediaRecorderRef is used, which is currently unused.
-        // If you were using MediaRecorder, ensure its stream's tracks are stopped.
         if (mediaRecorderRef.current.stream) {
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         }
@@ -91,6 +132,49 @@ export default function TheraChat({ onBack }) {
       };
       setMessages((prev) => [...prev, theraMessage]);
 
+      // Trigger recalculation in HomePage's hook for journal history averaging
+      if (calculateAverageEmotionalState) {
+          calculateAverageEmotionalState();
+      }
+
+      // --- ENHANCED EMERGENCY PATTERN DETECTION ---
+      const lowerCaseMessage = prompt.toLowerCase(); // Use the user's prompt for analysis
+      const foundKeywords = SUICIDE_KEYWORDS.filter(keyword => lowerCaseMessage.includes(keyword)); //
+
+      const isCriticallySuicidalMessage = foundKeywords.length > 0; //
+
+      // Define your thresholds (These values should align with your backend's distress score scale)
+      const HIGH_DISTRESS_THRESHOLD_FOR_EMAIL = 70; 
+      const CRITICAL_DISTRESS_SCORE_FROM_MESSAGE = 9; 
+                                                        
+                                                        
+
+      // Logic for email:
+      // If suicidal keywords are found, OR if the current message's distress score is critically high
+      if (isCriticallySuicidalMessage || data.distressScore >= CRITICAL_DISTRESS_SCORE_FROM_MESSAGE) { //
+          console.warn("Suicidal ideation or critical distress detected. Attempting to notify emergency contact.");
+
+          // Immediately set the distress bar to 100%
+          if (setCriticalDistress) { //
+              setCriticalDistress(); //
+          }
+
+          const userProfile = JSON.parse(localStorage.getItem("thera_user_profile"));
+          const authToken = JSON.parse(localStorage.getItem("thera_auth"))?.token; // Get token for sendEmergencyNotification
+
+          if (userProfile && authToken) {
+              const success = await sendEmergencyNotification(userProfile, emotionalState, API_URL, authToken);
+              if (success) {
+                  setMessages((prevMessages) => [...prevMessages, { id: (Date.now() + 2).toString(), content: "I've detected a significant level of distress and have notified your emergency contact. Please reach out for immediate help if you need it. You can also connect with a crisis hotline.", sender: 'thera', special: 'alert', timestamp: new Date() }]); // Added timestamp
+              } else {
+                  setMessages((prevMessages) => [...prevMessages, { id: (Date.now() + 2).toString(), content: "I tried to notify your emergency contact, but there was an issue. Please connect with a crisis hotline or a trusted person if you need immediate support.", sender: 'thera', special: 'alert', timestamp: new Date() }]); // Added timestamp
+              }
+          } else {
+              console.warn("User profile or token not available for emergency notification in ChatApp.");
+              setMessages((prevMessages) => [...prevMessages, { id: (Date.now() + 2).toString(), content: "I've detected a significant level of distress. Please reach out for immediate help if you need it. You can connect with a crisis hotline.", sender: 'thera', special: 'alert', timestamp: new Date() }]); // Added timestamp
+          }
+      }
+
     } catch (error) {
       console.error("Error fetching AI response:", error);
       const errorMessage = {
@@ -118,7 +202,7 @@ export default function TheraChat({ onBack }) {
     setMessages((prev) => [...prev, userMessage]);
     const messageContent = currentMessage;
     setCurrentMessage("");
-    accumulatedTranscriptRef.current = ""; // Reset accumulated transcript for next voice input
+    accumulatedTranscriptRef.current = ""; 
 
     await getTheraResponse(messageContent);
   };
@@ -231,9 +315,7 @@ export default function TheraChat({ onBack }) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContextRef.current.createMediaStreamSource(stream);
 
-      // Create audio processor
-      // The ScriptProcessorNode is deprecated, but still widely supported.
-      // For new code, AudioWorkletNode is the modern alternative.
+      
       audioProcessorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
       audioProcessorRef.current.onaudioprocess = (event) => {
@@ -315,7 +397,6 @@ export default function TheraChat({ onBack }) {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      // Update the input field with the combined transcript
       // This is crucial to show the user what's being transcribed
       setCurrentMessage(finalTranscript + interimTranscript);
     };

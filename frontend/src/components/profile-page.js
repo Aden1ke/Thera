@@ -200,19 +200,16 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
     }
   };
 
-  // --- SIMPLE FRONTEND-ONLY Logout Function ---
   const handleLogout = () => {
     // Clear all authentication-related items from local storage
     localStorage.removeItem("thera_auth");
     localStorage.removeItem("thera_user_profile"); // Clear user profile data too
 
-    // Call the onLogout prop to handle further actions (e.g., redirect to login)
     if (onLogout) {
       onLogout();
     }
   };
-  // --- End SIMPLE FRONTEND-ONLY Logout Function ---
-
+ 
 
   if (loadingProfile) {
     return (
@@ -295,8 +292,7 @@ export default function ProfilePage({ onBack, emotionalState, onLogout }) {
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>
-                {/* --- End Logout Button --- */}
-              </div>
+                </div>
             </div>
           </CardHeader>
         </Card>

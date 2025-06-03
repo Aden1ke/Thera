@@ -15,7 +15,7 @@ import authRoutes from './api/routes/authRoutes.js';
 import chatRouter from './api/routes/chatRoutes.js';
 import journalRouter from './api/routes/journalRoutes.js';
 import youTubeRouter from './api/routes/youTubeRoutes.js';
-import emergencyRouter from './api/routes/emergencyRoutes.js';
+import transporter from './api/routes/emergencyRoutes.js';
 //import robertaRoutes from './api/routes/robertaRoutes.js';
 import userRoutes from './api/routes/userRoutes.js'; // Keep this line as intended
 

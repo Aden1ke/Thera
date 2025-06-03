@@ -478,7 +478,6 @@ export default function SignupPage() {
       <div className="w-full max-w-md z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           {/* Logo */}
-            {/* Logo */}
           <div className="flex justify-center mb-6">
             <div className="relative w-16 h-16">
               <motion.div
