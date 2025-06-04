@@ -218,6 +218,8 @@ OPENAI_API_KEY="sk-fakeopenaiapikey0123456789abcdefghijklmnopqrstuvwxyz"
 YOUTUBE_API_KEY="AIzaSyB_fakeyoutubeapikey1234567890"
 JWT_SECRET="FakeSuperSecretKeyForJWTsUsedInProdOnlyPleaseDontShare"
 FRONTEND_URL="http://localhost:3000" # For local development
+EMAIL_USER=example@gmail.com
+EMAIL_PASS=wrfg hhjj hhhuy
 
 
 
